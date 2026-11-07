@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>仿真 Demo</title>
+<meta name="description" content="仿真 Demo 演示视频合集">
+<meta name="theme-color" content="#070b12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070b12'/%3E%3Cpath d='M25 18l22 14-22 14z' fill='%2367e8f9'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #070b12;
+    --panel: rgba(255, 255, 255, 0.035);
+    --panel-hover: rgba(255, 255, 255, 0.06);
+    --line: rgba(255, 255, 255, 0.09);
+    --text: #e9eefb;
+    --muted: #8e9ab3;
+    --accent-1: #67e8f9;
+    --accent-2: #818cf8;
+    --radius: 20px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+                 "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* 背景光晕 */
+  body::before,
+  body::after {
+    content: "";
+    position: fixed;
+    z-index: 0;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  body::before {
+    top: -220px; left: -160px;
+    width: 620px; height: 620px;
+    background: radial-gradient(circle, rgba(103, 232, 249, 0.28), transparent 65%);
+  }
+  body::after {
+    bottom: -260px; right: -180px;
+    width: 680px; height: 680px;
+    background: radial-gradient(circle, rgba(129, 140, 248, 0.26), transparent 65%);
+  }
+
+  /* 细网格纹理 */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%);
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 88px 24px 64px;
+  }
+
+  /* ---------- 头部 ---------- */
+  .hero { text-align: center; margin-bottom: 64px; }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 22px;
+    padding: 7px 16px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .eyebrow span.dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-1);
+    box-shadow: 0 0 12px var(--accent-1);
+  }
+
+  h1 {
+    margin: 0 0 18px;
+    font-size: clamp(42px, 8vw, 76px);
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+    background: linear-gradient(100deg, #ffffff 10%, var(--accent-1) 48%, var(--accent-2) 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .lead {
+    margin: 0 auto;
+    max-width: 560px;
+    color: var(--muted);
+    font-size: 16px;
+  }
+
+  /* ---------- 视频卡片 ---------- */
+  .clips {
+    display: grid;
+    gap: 36px;
+  }
+
+  .clip {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
+  }
+  .clip:hover {
+    background: var(--panel-hover);
+    border-color: rgba(103, 232, 249, 0.28);
+    transform: translateY(-2px);
+  }
+
+  .clip-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .index {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 46px; height: 46px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: rgba(103, 232, 249, 0.08);
+    color: var(--accent-1);
+    font-size: 16px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .clip-head h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+  }
+
+  .meta {
+    margin: 2px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .meta .sep { opacity: 0.45; }
+
+  .badge {
+    margin-left: auto;
+    padding: 5px 11px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+  }
+
+  /* 播放器 */
+  .player {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.9), inset 0 0 0 1px var(--line);
+  }
+
+  .player video {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 74vh;
+    background: #000;
+  }
+
+  .play-toggle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: grid;
+    place-items: center;
+    width: 74px; height: 74px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    background: rgba(8, 12, 20, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff;
+    cursor: pointer;
+    opacity: 1;
+    transition: opacity 0.25s ease, transform 0.25s ease, background 0.25s ease;
+  }
+  .play-toggle svg { width: 26px; height: 26px; margin-left: 4px; }
+  .play-toggle:hover { background: rgba(103, 232, 249, 0.22); transform: translate(-50%, -50%) scale(1.06); }
+  .play-toggle:focus-visible { outline: 2px solid var(--accent-1); outline-offset: 3px; }
+
+  .player.is-playing .play-toggle {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+
+  /* ---------- 页脚 ---------- */
+  footer {
+    margin-top: 56px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  footer a {
+    color: var(--accent-1);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(103, 232, 249, 0.35);
+  }
+  footer a:hover { border-bottom-color: var(--accent-1); }
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width: 640px) {
+    main { padding: 56px 16px 44px; }
+    .hero { margin-bottom: 44px; }
+    .clip { padding: 14px; border-radius: 16px; }
+    .clip-head { gap: 12px; margin-bottom: 14px; }
+    .index { width: 38px; height: 38px; border-radius: 11px; font-size: 14px; }
+    .clip-head h2 { font-size: 17px; }
+    .badge { display: none; }
+    .play-toggle { width: 58px; height: 58px; }
+    .play-toggle svg { width: 20px; height: 20px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <main>
+    <header class="hero">
+      <p class="eyebrow"><span class="dot"></span>Simulation Showcase</p>
+      <h1>仿真 Demo</h1>
+      <p class="lead">两段仿真运行录屏，点击视频上的播放按钮即可观看。</p>
+    </header>
+
+    <section class="clips">
+      <article class="clip">
+        <div class="clip-head">
+          <span class="index" aria-hidden="true">01</span>
+          <div>
+            <h2>仿真演示 一</h2>
+            <p class="meta">
+              <span>1068 × 596</span>
+              <span class="sep">·</span>
+              <span>00:14</span>
+            </p>
+          </div>
+          <span class="badge">MP4</span>
+        </div>
+        <div class="player">
+          <video controls playsinline preload="auto" aria-label="仿真演示一">
+            <source src="demo-01.mp4" type="video/mp4">
+            您的浏览器不支持 HTML5 视频播放。
+          </video>
+          <button class="play-toggle" type="button" aria-label="播放仿真演示一">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
+          </button>
+        </div>
+      </article>
+
+      <article class="clip">
+        <div class="clip-head">
+          <span class="index" aria-hidden="true">02</span>
+          <div>
+            <h2>仿真演示 二</h2>
+            <p class="meta">
+              <span>1156 × 332</span>
+              <span class="sep">·</span>
+              <span>00:06</span>
+            </p>
+          </div>
+          <span class="badge">MP4</span>
+        </div>
+        <div class="player">
+          <video controls playsinline preload="auto" aria-label="仿真演示二">
+            <source src="demo-02.mp4" type="video/mp4">
+            您的浏览器不支持 HTML5 视频播放。
+          </video>
+          <button class="play-toggle" type="button" aria-label="播放仿真演示二">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
+          </button>
+        </div>
+      </article>
+    </section>
+
+    <footer>
+      仿真 Demo · 共 2 段演示视频
+    </footer>
+  </main>
+
+  <script>
+    document.querySelectorAll('.player').forEach(function (player) {
+      var video = player.querySelector('video');
+      var toggle = player.querySelector('.play-toggle');
+
+      var sync = function () {
+        var playing = !video.paused && !video.ended;
+        player.classList.toggle('is-playing', playing);
+      };
+
+      toggle.addEventListener('click', function () {
+        if (video.paused) {
+          video.play();
+        } else {
+          video.pause();
+        }
+      });
+
+      video.addEventListener('play', sync);
+      video.addEventListener('pause', sync);
+      video.addEventListener('ended', sync);
+    });
+  </script>
+</body>
+</html>
